@@ -1,0 +1,92 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+datasource db {
+  provider = "postgresql" // Atau mysql, sqlite, dsb.
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  name      String
+  email     String    @unique
+  password  String
+  role      String    @default("user") // Default role
+  articles  Article[] // Relasi ke artikel yang dibuat pengguna
+  comments  Comment[] // Relasi ke komentar yang dibuat pengguna
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Article {
+  id          Int               @id @default(autoincrement())
+  title       String
+  content     String
+  authorId    Int
+  author      User              @relation(fields: [authorId], references: [id]) // Relasi ke pengguna sebagai penulis
+  categoryId  Int
+  category    Category          @relation(fields: [categoryId], references: [id]) // Relasi ke kategori artikel
+  tags        ArticleTags[]     // Relasi ke tabel penghubung ArticleTags
+  ads         ArticleAds[]      // Relasi ke tabel penghubung ArticleAds
+  comments    Comment[]         // Relasi ke komentar pada artikel ini
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+model Category {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique // Nama kategori unik
+  articles Article[] // Relasi ke artikel dalam kategori ini
+}
+
+model Comment {
+  id        Int       @id @default(autoincrement())
+  content   String
+  articleId Int
+  article   Article   @relation(fields: [articleId], references: [id]) // Relasi ke artikel tempat komentar ini dibuat
+  userId    Int
+  user      User      @relation(fields: [userId], references: [id]) // Relasi ke pengguna yang membuat komentar
+  createdAt DateTime  @default(now())
+}
+
+model Tag {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique // Nama tag unik
+  articles ArticleTags[] // Relasi ke tabel penghubung ArticleTags
+}
+
+model Advertisement {
+  id         Int       @id @default(autoincrement())
+  title      String
+  content    String
+  imageUrl   String
+  advertiser String
+  startDate  DateTime
+  endDate    DateTime
+  targetUrl  String
+  placement  String
+  articles   ArticleAds[] // Relasi ke tabel penghubung ArticleAds
+}
+
+model ArticleTags {
+  article   Article @relation(fields: [articleId], references: [id])
+  articleId Int
+  tag       Tag     @relation(fields: [tagId], references: [id])
+  tagId     Int
+  @@id([articleId, tagId]) // Composite primary key untuk hubungan banyak ke banyak
+}
+
+model ArticleAds {
+  article   Article        @relation(fields: [articleId], references: [id])
+  articleId Int
+  ad        Advertisement  @relation(fields: [adId], references: [id])
+  adId      Int
+  @@id([articleId, adId]) // Composite primary key untuk hubungan banyak ke banyak
+}
